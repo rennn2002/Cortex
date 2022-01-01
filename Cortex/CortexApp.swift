@@ -9,12 +9,12 @@ import SwiftUI
 
 @main
 struct CortexApp: App {
-    let persistenceController = PersistenceController.shared
+    let persistenceController = PersistenceController.shared    // create instance
 
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .environment(\.managedObjectContext, persistenceController.container.viewContext)
+                .environment(\.managedObjectContext, persistenceController.container.viewContext)   //register NSManagedObjectContext to Env variable
         }
     }
 }

@@ -9,80 +9,62 @@ import SwiftUI
 import CoreData
 
 struct ContentView: View {
+    
     @Environment(\.managedObjectContext) private var viewContext
-
-    @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \Item.timestamp, ascending: true)],
-        animation: .default)
-    private var items: FetchedResults<Item>
-
+    
+    @State var selectedStatus: [String] = []
+    
+    @FetchRequest(  // FetchRequest updates View corresponding to the change of data
+        entity: Word.entity(), sortDescriptors: [NSSortDescriptor(keyPath: \Word.timestamp, ascending: true)], predicate:nil , animation: .linear(duration: 0.5)
+    ) var words: FetchedResults<Word>
+    
+    @State var status: String = "white"
+    
+    //    @State var wordsRequest: FetchRequest<Word> = FetchRequest(entity: Word.entity(), sortDescriptors: [NSSortDescriptor(keyPath: \Word.timestamp, ascending: true)], predicate: nil)
+    //
+    //    @FetchRequest var words: FetchedResults<Word> {wordsRequest.wrappedValue}
+    
+    //    init() {
+    //        @State var status: String = "white"
+    //        self.wordsRequest = FetchRequest(entity: Word.entity(), sortDescriptors: [NSSortDescriptor(keyPath: \Word.timestamp, ascending: true)], predicate: NSPredicate(format: "status = %@", status), animation: .linear(duration: 1.0))
+    //    }
+    
+    @State var offset = CGSize.zero
+    @State var showAddCardView: Bool = false
+    @State var cardNum: Int = 0
+    
+    @State var isSelected: Bool = false
+    
+    let colorsList: [Color] = [Color.white, Color.green, Color.pink, Color.blue]
+    
+    @State var text: String = ""
+     
+    @State private var isEditing = false
+     
+    
     var body: some View {
         NavigationView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp!, formatter: itemFormatter)")
-                    } label: {
-                        Text(item.timestamp!, formatter: itemFormatter)
-                    }
-                }
-                .onDelete(perform: deleteItems)
-            }
-            .toolbar {
+            ScrollView(showsIndicators: false) {
+                ForEach(self.words) { word in
+                    CardView(id: word.id!, word: word.wordsName!, word_trans: word.wordsNameTrans!, status: word.status!)
+                }.padding(35)
+            }.toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
+                    NavigationLink(destination: AddCardView(showAddCardView: self.$showAddCardView), isActive: self.$showAddCardView) {
+                        Image(systemName: "plus")
+                    }
                 }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
+                ToolbarItem(placement: .principal) {
+                    
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack {
+                            ForEach(self.colorsList, id:\.self) { color in
+                                ColorBarView(color: color, words: self._words, selectedStatus: self.$selectedStatus)
+                            }
+                        }
                     }
                 }
             }
-            Text("Select an item")
         }
-    }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(context: viewContext)
-            newItem.timestamp = Date()
-
-            do {
-                try viewContext.save()
-            } catch {
-                // Replace this implementation with code to handle the error appropriately.
-                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
-            }
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            offsets.map { items[$0] }.forEach(viewContext.delete)
-
-            do {
-                try viewContext.save()
-            } catch {
-                // Replace this implementation with code to handle the error appropriately.
-                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
-            }
-        }
-    }
-}
-
-private let itemFormatter: DateFormatter = {
-    let formatter = DateFormatter()
-    formatter.dateStyle = .short
-    formatter.timeStyle = .medium
-    return formatter
-}()
-
-struct ContentView_Previews: PreviewProvider {
-    static var previews: some View {
-        ContentView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
     }
 }
